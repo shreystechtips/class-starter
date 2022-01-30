@@ -1,0 +1,43 @@
+name: Build and Deploy
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - hw/**/*.md
+
+jobs:
+  convert_via_pandoc:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+      - name: Gather Data
+        id: file
+        run: echo '::set-output name=f::$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep "hw/.*/*.md")'
+      - name: Strip name
+        id: strip
+        run: echo "::set-output name=f::$(echo ${{ steps.file.outputs.f }} | sed 's%/[^/]*$%/%')"
+      - name: Commit Name
+        id: commit_n
+        run: echo "::set-output name=f::$(echo ${{ steps.file.outputs.f }} | sed 's|.*/||' | cut -f1 -d'.')"
+      - name: Convert Document
+        uses: docker://pandoc/latex
+        with:
+          args: "-s ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.md -o ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.pdf --pdf-engine pdflatex -f markdown-raw_tex+tex_math_single_backslash+fancy_lists+startnum --resource-path ${{ steps.strip.outputs.f }}"
+      - name: Commit Changes
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
+          git add .
+          git commit -m "PDF for ${{ steps.commit_n.outputs.f }}"
+      - name: Push changes # push the output folder to your repo
+        uses: ad-m/github-push-action@master
+        with:
+          branch: ${{ github.ref }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+# markdown+tex_math_single_backslash+fancy_lists+startnum

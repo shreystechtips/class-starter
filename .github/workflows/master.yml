@@ -27,7 +27,7 @@ jobs:
       - name: Convert Document
         uses: docker://pandoc/latex
         with:
-          args: "-s ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.md -o ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.pdf --pdf-engine pdflatex -f markdown-raw_tex+tex_math_single_backslash+fancy_lists+startnum --resource-path ${{ steps.strip.outputs.f }}"
+          args: "-s ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.md -o ${{ steps.strip.outputs.f }}${{ steps.commit_n.outputs.f }}.pdf --pdf-engine pdflatex -f markdown+tex_math_single_backslash+fancy_lists+startnum --resource-path ${{ steps.strip.outputs.f }}"
       - name: Commit Changes
         run: |
           git config --local user.email "actions@github.com"
